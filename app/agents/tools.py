@@ -3,6 +3,10 @@ import httpx
 from datetime import date
 from decimal import Decimal
 from typing import Annotated, Optional, List, Any
+from pydantic import BaseModel, Field
+from app import crud, schemas
+from app.database import SessionLocal
+from app.agents import portfolio_analyzer_agent
 
 def _parse_ticker_from_input(ticker_input: Any) -> str:
     """
@@ -139,3 +143,28 @@ def delete_asset_by_ticker(ticker: Annotated[str, "The ticker symbol of the asse
             return f"Successfully deleted asset {ticker} and all its records."
     except httpx.HTTPStatusError as e:
         return f"Error: {e.response.text}"
+
+# --- Analysis Tools ---
+
+@tool
+def get_full_portfolio_analysis() -> list[dict] | str:
+    """
+    Analyzes all assets in the portfolio and returns a list of their financial metrics.
+    This should be the primary tool to get an overview of the entire portfolio before making a recommendation.
+    """
+    db = SessionLocal()
+    try:
+        assets = crud.get_assets(db=db, limit=1000)
+        if not assets:
+            return "Error: No assets found in the portfolio to analyze."
+
+        full_analysis = []
+        for asset in assets:
+            analysis = portfolio_analyzer_agent.analyze_asset(db=db, asset=asset)
+            full_analysis.append(analysis.model_dump(mode='json'))
+
+        return full_analysis
+    except Exception as e:
+        return f"An unexpected error occurred during portfolio analysis: {e}"
+    finally:
+        db.close()
