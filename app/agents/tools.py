@@ -178,3 +178,42 @@ def get_full_portfolio_analysis() -> List[dict] | str:
             return full_analysis
     except (httpx.HTTPStatusError, IndexError, KeyError) as e:
         return f"An unexpected error occurred during portfolio analysis: {str(e)}"
+
+@tool
+def classify_agent_request(
+    question: Annotated[str, "The original natural-language request from the user."]
+) -> dict:
+    """
+    Classifies the user request into registration, management, or analysis based on keyword heuristics.
+    Acts as a backup signal for the router agent when the LLM needs structured hints.
+    """
+    normalized = question.lower()
+
+    keywords = {
+        "registration_agent": ["register", "add position", "new asset", "compr", "buy"],
+        "management_agent": ["update", "correct", "sell", "delete", "adjust", "fix"],
+        "analysis_agent": ["analysis", "invest", "recommendation", "where should", "analyze"],
+    }
+
+    scores = {agent: 0 for agent in keywords}
+    for agent, tokens in keywords.items():
+        for token in tokens:
+            if token in normalized:
+                scores[agent] += 1
+
+    best_agent = max(scores, key=scores.get)
+    best_score = scores[best_agent]
+    total_hits = sum(scores.values()) or 1
+    confidence = min(1.0, best_score / total_hits) if best_score else 0.33
+
+    reasoning = (
+        f"Matched keywords for {best_agent}: {best_score} hit(s)."
+        if best_score
+        else "No strong keyword matches; defaulting to analysis_agent."
+    )
+
+    return {
+        "agent_name": best_agent if best_score else "analysis_agent",
+        "confidence": round(confidence, 2),
+        "reasoning": reasoning,
+    }
