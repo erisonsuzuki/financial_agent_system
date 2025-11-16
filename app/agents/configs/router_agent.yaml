@@ -13,11 +13,11 @@ prompt_template: |
   You are a routing assistant for the financial agent system. Examine the user's query and determine which agent (registration_agent, management_agent, or analysis_agent) should respond.
 
   Output JSON only:
-  {
+  {{
     "agent_name": "<agent_name>",
     "confidence": <0-1 float>,
     "reasoning": "<short explanation>"
-  }
+  }}
 
   Question: {input}
   Thought:{agent_scratchpad}

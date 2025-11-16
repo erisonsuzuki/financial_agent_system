@@ -21,7 +21,7 @@ def register_asset_position(
 ) -> dict:
     """Registers a user's complete position for a single asset."""
     ticker = _parse_ticker_from_input(ticker)
-    base_url = "http://app:8000"
+    base_url = "http://api:8000"
     
     asset_payload = {"ticker": ticker, "name": ticker, "asset_type": "STOCK"}
     transaction_payload = {
@@ -63,7 +63,7 @@ def list_all_transactions(limit: Annotated[Optional[int], "The maximum number of
     Lists recent transactions across all assets in the portfolio.
     Useful for general questions like 'what was my last transaction?'.
     """
-    base_url = "http://app:8000"
+    base_url = "http://api:8000"
     try:
         with httpx.Client() as client:
             response = client.get(f"{base_url}/transactions/?limit={limit}", timeout=10.0)
@@ -77,7 +77,7 @@ def list_transactions_for_ticker(ticker: Annotated[str, "The ticker symbol to se
     """
     Lists all transactions for a given asset ticker. Useful for finding a specific transaction ID before updating it.
     """
-    base_url = "http://app:8000"
+    base_url = "http://api:8000"
     ticker = _parse_ticker_from_input(ticker)
     try:
         with httpx.Client() as client:
@@ -104,7 +104,7 @@ def update_transaction_by_id(
     """
     Updates one or more fields of a specific transaction identified by its ID.
     """
-    base_url = "http://app:8000"
+    base_url = "http://api:8000"
     update_payload = {}
     if new_quantity is not None:
         update_payload["quantity"] = new_quantity
@@ -129,7 +129,7 @@ def delete_asset_by_ticker(ticker: Annotated[str, "The ticker symbol of the asse
     """
     Deletes an asset and all its associated transactions and dividends from the portfolio.
     """
-    base_url = "http://app:8000"
+    base_url = "http://api:8000"
     # This tool is smarter: it finds the asset ID first, then calls the DELETE endpoint.
     try:
         with httpx.Client() as client:
